@@ -230,8 +230,7 @@ def replace_library(config, state):
         new_path = library_dir + basename
         log.debug('changing ownership of {} from {} to {}'.format(new_path, uid, gid))
         os.chown(new_path, uid, gid)
-    width = state['display']['width']
-    height = state['display']['height']
+    width, height = dimensions(state)
     sync_library(state, library_dir)
     store.dispatch(actions.replace_library('done'))
 

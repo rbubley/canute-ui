@@ -110,8 +110,8 @@ def sort_books(books):
 
 
 def dimensions(state):
-    width = state['display']['width']
-    height = state['display']['height']
+    width = state['dimensions']['width']
+    height = state['dimensions']['height']
     return [width, height]
 
 
