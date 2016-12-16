@@ -8,19 +8,22 @@ import utility
 import menu
 
 
+INITIAL_WIDTH = 40
+INITIAL_HEIGHT = 9
+
 initial_state = frozendict({
     'location' : 'library',
     'library'  : frozendict({'data': tuple(), 'page': 0}),
     'menu'     : frozendict({
-        'data': tuple(map(partial(utility.pad_line, 40), menu.menu_titles_braille)),
+        'data': tuple(map(partial(utility.pad_line, INITIAL_WIDTH), menu.menu_titles_braille)),
         'page': 0
     }),
     'books'             : tuple(),
     'replacing_library' : False,
     'backing_up_log'    : False,
     'shutting_down'     : False,
-    'dimensions'        : frozendict({'width': 40, 'height': 9}),
-    'display_buffer'    : tuple(),
+    'dimensions'        : frozendict({'width': INITIAL_WIDTH, 'height': INITIAL_HEIGHT}),
+    'display_buffer'    : tuple([frozendict({'set': True, 'data': tuple()})]) * INITIAL_HEIGHT
 })
 
 state_file = 'state.pkl'
@@ -32,7 +35,7 @@ def read():
             state = pickle.load(fh)
             return state
     except:
-        log.debug('error reading state file, using hard-coded initial state')
+        log.debug('error reading state file, using hard-coded initial state: {}'.format(initial_state))
         return initial_state
 
 

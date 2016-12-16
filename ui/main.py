@@ -90,14 +90,20 @@ def button_loop(driver):
 
 def handle_changes(driver, config):
     state = store.get_state()
-    render(driver, state)
+    render_to_buffer(state)
+    #send_line_to_canute(driver, state['display_buffer'])
     change_files(config, state)
     initial_state.write(state)
     if state['shutting_down'] and isinstance(driver, Pi):
         os.system("sudo shutdown -h now")
 
+def send_line_to_canute(driver, buffer):
+    for index,line in enumerate(buffer):
+        if not line['set']:
+            driver.set_braille_row(index, line['data'])
+            store.dispatch(actions.report_line_set(index))
 
-def render(driver, state):
+def render_to_buffer(state):
     width, height = dimensions(state)
     location = state['location']
     if state['shutting_down']:
@@ -115,7 +121,7 @@ def render(driver, state):
         while len(data) < data_height:
             data += ((0,) * width,)
         title       = format_title('library menu', width, page, max_pages)
-        set_display(driver, tuple([title]) + tuple(data))
+        set_display_buffer(tuple([title]) + tuple(data))
     elif location == 'menu':
         page      = state['menu']['page']
         data      = state['menu']['data']
@@ -128,24 +134,23 @@ def render(driver, state):
         #pad page with empty rows
         while len(data) < data_height:
             data += ((0,) * width,)
-        set_display(driver, tuple([title]) + tuple(data))
+        set_display_buffer(tuple([title]) + tuple(data))
     elif type(location) == int:
         page = state['books'][location]['page']
         data = state['books'][location]['data']
         n    = page * height
         data = data[n : n + height]
-        set_display(driver, data)
+        set_display_buffer(data)
 
 
 previous_data = []
-def set_display(driver, data):
+def set_display_buffer(data):
     global previous_data
     if data != previous_data:
-        for row, braille in enumerate(data):
-            driver.set_braille_row(row, braille)
+        store.dispatch(actions.set_buffer(data))
         previous_data = data
     else:
-        log.debug('not setting page with identical data')
+        log.debug('not setting buffer with identical data')
 
 
 def sync_library(state, library_dir):

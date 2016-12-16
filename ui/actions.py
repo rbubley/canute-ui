@@ -103,6 +103,16 @@ class Reducers():
             return state.copy(backing_up_log = value)
     def shutdown(self, state, value):
         return state.copy(shutting_down = True)
+    def set_buffer(self, state, data):
+        display_buffer = list(state['display_buffer'])
+        for index,line in enumerate(data):
+            display_buffer[index] = frozendict({'set': False, 'data': line})
+        return state.copy(display_buffer = tuple(display_buffer))
+    def report_line_set(self, state, line_number):
+        display_buffer = list(state['display_buffer'])
+        display_line = display_buffer[line_number].copy(set = True)
+        display_buffer[line_number] = display_line
+        return state.copy(display_buffer = tuple(display_buffer))
 
 
 def sort_books(books):
