@@ -65,6 +65,11 @@ def run(driver, config):
     store.dispatch(actions.trigger())
     button_loop(driver)
 
+    state    = store.get_state()
+    if state['update_ui'] == 'in progress':
+        store.dispatch(actions.update_ui('done')) # set as done, if it fails, need to be able to try again
+        utility.update_ui(config)
+
 
 def button_loop(driver):
     quit = False
@@ -76,7 +81,7 @@ def button_loop(driver):
             if not driver.is_ok():
                 log.debug('shutting down due to GUI closed')
                 store.dispatch(actions.shutdown())
-            if state['shutting_down']:
+            if state['shutting_down'] or state['halt_ui']:
                 quit = True
         if type(location) == int:
             location = 'book'
@@ -86,6 +91,8 @@ def button_loop(driver):
                 store.dispatch(button_bindings[location][_type][_id]())
             except KeyError:
                 log.debug('no binding for key {}, {} press'.format(_id, _type))
+
+    store.dispatch(actions.halt_ui(False))
 
 
 def handle_changes(driver, config):
@@ -192,6 +199,13 @@ def change_files(config, state):
     if state['backing_up_log'] == 'start':
         store.dispatch(actions.backup_log('in progress'))
         backup_log(config)
+    if state['update_ui'] == 'start':
+        log.info("update ui = start")
+        if check_for_update(config):
+            store.dispatch(actions.update_ui('in progress'))
+            store.dispatch(actions.halt_ui(True))
+        else:
+            store.dispatch(actions.update_ui('done'))
 
 
 def format_title(title, width, page_number, total_pages):
@@ -243,6 +257,15 @@ def replace_library(config, state):
     sync_library(state, library_dir)
     store.dispatch(actions.replace_library('done'))
 
+def check_for_update(config):
+    usb_dir = config.get('files', 'usb_dir')
+    log.info("update UI - looking for new ui in %s" % usb_dir)
+    install_dir = config.get('files', 'install_dir')
+    install_dir = os.path.expanduser(install_dir)
+    ui_file = utility.find_ui_update(usb_dir)
+    if ui_file is not None:
+        log.info("found")
+        return True
 
 def backup_log(config):
     usb_dir = config.get('files', 'usb_dir')
