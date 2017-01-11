@@ -18,11 +18,15 @@ class FormfeedConversionException(Exception): pass
 class LinefeedConversionException(Exception): pass
 
 def update_ui(config):
-    log.info("updating UI")
-    usb_dir = config.get('files', 'usb_dir')
-    ui_file = find_ui_update(usb_dir)
+    '''
+    updates the ui by:
 
-    log.info("looking for new ui in %s" % usb_dir)
+    * archiving the ui directory in config's install_dir
+    * untar.gz new archive into place
+    '''
+    log.info("updating UI")
+    ui_file = find_ui_update(config)
+
     install_dir = config.get('files', 'install_dir')
     install_dir = os.path.expanduser(install_dir)
 
@@ -30,20 +34,29 @@ def update_ui(config):
     archive_dir = os.path.expanduser(archive_dir)
 
     # archive old ui
-    archive_dir += datetime.now().strftime("%Y%m%d-%H%M%S-ui")
     log.info("archiving %s to %s" % (install_dir, archive_dir))
+    """
+    archive_dir += datetime.now().strftime("%Y%m%d-%H%M%S-ui")
     shutil.move(install_dir, archive_dir)
 
     # untar new ui
     log.info("untar")
     with tarfile.open(ui_file, 'r:*') as archive:
         archive.extractall(install_dir)
+    """
 
 
-def find_ui_update(directory):
-    '''recursively look for firmware, return first one found'''
+def find_ui_update(config):
+    '''
+    recursively look for firmware in the usb_dir,
+    firmware file is called canute-ui.tar.gz
+    returns first one found
+    '''
+    usb_dir = config.get('files', 'usb_dir')
     ui_file = 'canute-ui.tar.gz'
-    for root, dirnames, filenames in os.walk(directory):
+
+    log.info("update UI - looking for new ui in %s" % usb_dir)
+    for root, dirnames, filenames in os.walk(usb_dir):
         for filename in filenames:
                 if filename == ui_file:
                     return(os.path.join(root, filename))

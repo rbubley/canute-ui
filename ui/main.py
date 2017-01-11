@@ -64,8 +64,11 @@ def run(driver, config):
     # guarantee of the subscription triggering if subscribed before that.
     store.dispatch(actions.trigger())
     button_loop(driver)
+    run_update(config)
 
-    state    = store.get_state()
+
+def run_update(config):
+    state = store.get_state()
     if state['update_ui'] == 'in progress':
         store.dispatch(actions.update_ui('done')) # set as done, if it fails, need to be able to try again
         utility.update_ui(config)
@@ -201,10 +204,11 @@ def change_files(config, state):
         backup_log(config)
     if state['update_ui'] == 'start':
         log.info("update ui = start")
-        if check_for_update(config):
+        if utility.find_ui_update(config):
             store.dispatch(actions.update_ui('in progress'))
             store.dispatch(actions.halt_ui(True))
         else:
+            log.info("update not found")
             store.dispatch(actions.update_ui('done'))
 
 
@@ -257,15 +261,6 @@ def replace_library(config, state):
     sync_library(state, library_dir)
     store.dispatch(actions.replace_library('done'))
 
-def check_for_update(config):
-    usb_dir = config.get('files', 'usb_dir')
-    log.info("update UI - looking for new ui in %s" % usb_dir)
-    install_dir = config.get('files', 'install_dir')
-    install_dir = os.path.expanduser(install_dir)
-    ui_file = utility.find_ui_update(usb_dir)
-    if ui_file is not None:
-        log.info("found")
-        return True
 
 def backup_log(config):
     usb_dir = config.get('files', 'usb_dir')
